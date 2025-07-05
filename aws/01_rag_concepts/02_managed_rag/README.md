@@ -1,4 +1,4 @@
-# Build a Simple RAG 
+# Build a managed RAG for better Responses
 
 In this lab, we use AWS Bedrock to implement a simple Retrieval-Augmented Generation (RAG) pipeline
 
