@@ -26,11 +26,12 @@ session = boto3.session.Session()
 region = session.region_name
 
 
-def test_knowledge_base(kb_id: str, query: str) -> str:
+def test_kb_retrieve_generate(kb_id: str, query: str) -> str:
     """
-    Test the knowledge base using the retrieve and generate API. 
-    With this API, Bedrock takes care of retrieving the necessary references from the knowledge base 
-    and generating the final answer using the specified foundation model from Bedrock.
+    Test the knowledge base using the retrieve and generate API and get a response based on relavent data in KB.
+    Here Bedrock takes care of:
+        1) retrieving the necessary references from the knowledge base 
+        2) generating the final answer with addintional context using the specified foundation model .
     """
     bedrock_agent_runtime_client = boto3.client('bedrock-agent-runtime')
 
@@ -54,6 +55,42 @@ def test_knowledge_base(kb_id: str, query: str) -> str:
 
     result = response['output']['text']
     return result
+
+
+def test_kb_retrive_sources(kb_id: str, query: str, numberOfResults: int):
+    """
+    Test the KB using the retrieve API to get a list of all the data source 
+    chunks that were found in the vector store matiching a query 
+    """
+    bedrock_agent_runtime_client = boto3.client('bedrock-agent-runtime')
+    response = bedrock_agent_runtime_client.retrieve(
+        knowledgeBaseId=kb_id,
+        nextToken='string',
+        retrievalConfiguration={
+            "vectorSearchConfiguration": {
+                "numberOfResults": 5,
+            }
+        },
+        retrievalQuery={
+            "text": query
+        }
+    )
+
+    response_print(response)
+
+
+def response_print(retrieve_resp):
+    """
+    Helper function for test_kb_retrive_sources to print out the various chunks 
+    that were retrived for a given query
+    - structure 'retrievalResults': list of contents. Each list has content, location, score, metadata
+    """
+    #
+    for num, chunk in enumerate(retrieve_resp['retrievalResults'], 1):
+        print(f'Chunk {num}: ', chunk['content']['text'], end='\n'*2)
+        print(f'Chunk {num} Location: ', chunk['location'], end='\n'*2)
+        print(f'Chunk {num} Score: ', chunk['score'], end='\n'*2)
+        print(f'Chunk {num} Metadata: ', chunk['metadata'], end='\n'*2)
 
 
 def main():
@@ -83,6 +120,12 @@ def main():
         required=True,
         help='ID of the Knowledge Base to test'
     )
+    parser.add_argument(
+        "--chunks",
+        type=int,
+        default=5,               # ← default value if flag is omitted
+        help="Number of Chunks to get from Retrive API(default: 5)"
+    )
     args = parser.parse_args()
 
     # load query from file or directly
@@ -96,9 +139,16 @@ def main():
     else:
         query = args.query
 
-    logger.info("Sending query to KB %s", args.kb_id)
-    result = test_knowledge_base(args.kb_id, query)
-    print(f"\nResult from KB:\n{result}\n")
+    print("\nSending query to KB's Retrive and Generate API %s .....", args.kb_id)
+    result_ret_gen = test_kb_retrieve_generate(args.kb_id, query)
+    print(
+        f"-Test Result : \n\t{result_ret_gen}")
+
+    print(
+        "\n\nSending query to KB's Retrive API to get matching chunks %s .....", args.kb_id)
+    print(
+        f"-Test Result:")
+    test_kb_retrive_sources(args.kb_id, query, args.chunks)
 
 
 if __name__ == "__main__":
