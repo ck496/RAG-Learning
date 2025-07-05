@@ -26,6 +26,9 @@ What we'll do:
 4. Test with `python test_kb.py --kb_id KB_ID --query-file path/to/query.txt`
    1. `test_kb_retrieve_generate()` : Hits the [Retrieve and Generate API](https://boto3.amazonaws.com/v1/documentation/api/latest/reference/services/bedrock-agent-runtime/client/retrieve_and_generate.html) and returns context aware response from an LLM for a given query
    2. `test_kb_retrive_source()` : Hits [Retrieve API](https://boto3.amazonaws.com/v1/documentation/api/latest/reference/services/bedrock-agent-runtime/client/retrieve.html)to get relevant chunks found for a given query
+5. CLEAN UP resources (KB, Iam, s3) when you're done to prevent AWS charges
+   1. use `knowledge_base.delete_kb(delete_s3_bucket=True, delete_iam_roles_and_policies=True)`
+   2. or Do it on the AWS console
 
 ---
 
